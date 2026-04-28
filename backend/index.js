@@ -121,7 +121,7 @@ async function handleUpdate(update) {
 
     if (payload === 'cheese') {
       userState.set(chatId, { mode: 'cheese' });
-      await sendMessage(chatId, '🧀 Задай вопрос про Антиосов колбасный сыр:');
+      await sendMessage(chatId, '🧀 Задай вопрос про колбасный сыр фабрики им. Антиосова:');
       return;
     }
 
