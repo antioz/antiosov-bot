@@ -131,7 +131,13 @@ async function handleUpdate(update) {
     }
 
     if (payload === 'about') {
-      await sendMessage(chatId, `👤 О создателе\n\n${MINIAPP_URL}`);
+      const openAppKeyboard = {
+        type: 'inline_keyboard',
+        payload: {
+          buttons: [[{ type: 'open_app', text: '🔗 Открыть портфолио', web_app: MINIAPP_URL }]],
+        },
+      };
+      await sendMessage(chatId, '👤 О создателе — Дмитрий Антиосов', openAppKeyboard);
       return;
     }
 
