@@ -16,7 +16,7 @@ const TONES = {
 };
 
 function getToneButtons() {
-  return Object.entries(TONES).map(([key, t]) => ({ text: t.label, payload: `tone_${key}` }));
+  return Object.entries(TONES).map(([key, t]) => ({ type: 'callback', text: t.label, payload: `tone_${key}` }));
 }
 
 function getTonePrompt(toneKey) {

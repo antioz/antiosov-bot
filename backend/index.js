@@ -13,16 +13,15 @@ app.use(express.json());
 
 const BOT_TOKEN = process.env.MAX_BOT_TOKEN;
 const MINIAPP_URL = process.env.MINIAPP_URL || 'https://antioz.github.io/antiosov-bot/';
-const MAX_API = `https://platform-api.max.ru`;
+const MAX_API = 'https://platform-api.max.ru';
 
-// Per-user state: { mode, tonePrompt, awaitingOrder }
 const userState = new Map();
 
 async function sendMessage(chatId, text, keyboard = null) {
   const body = { chat_id: chatId, text };
-  if (keyboard) body.reply_markup = keyboard;
+  if (keyboard) body.attachments = [keyboard];
   try {
-    await axios.post(`${MAX_API}/sendMessage`, body, {
+    await axios.post(`${MAX_API}/messages`, body, {
       headers: { Authorization: BOT_TOKEN },
     });
   } catch (err) {
@@ -30,32 +29,73 @@ async function sendMessage(chatId, text, keyboard = null) {
   }
 }
 
-async function answerCallback(callbackId) {
-  await axios.post(`${MAX_API}/answerCallbackQuery`, { callback_query_id: callbackId }, {
-    headers: { Authorization: BOT_TOKEN },
-  }).catch(() => {});
+function makeKeyboard(buttons) {
+  return {
+    type: 'inline_keyboard',
+    payload: { buttons },
+  };
 }
 
 async function handleUpdate(update) {
-  const msg = update.message;
-  const cb = update.callback_query;
+  const type = update.update_type;
 
-  const chatId = msg?.chat?.id || cb?.message?.chat?.id;
-  if (!chatId) return;
+  if (type === 'bot_started') {
+    const chatId = update.chat_id;
+    userState.set(chatId, {});
+    await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
+    return;
+  }
 
-  const state = userState.get(chatId) || {};
+  if (type === 'message_created') {
+    const msg = update.message;
+    const chatId = msg?.recipient?.chat_id || msg?.recipient?.user_id;
+    const text = msg?.body?.text || '';
+    if (!chatId) return;
 
-  // Callback button press
-  if (cb) {
-    await answerCallback(cb.id);
-    const payload = cb.data || cb.payload;
+    const state = userState.get(chatId) || {};
+
+    if (text === '/start' || text === '/меню' || text === '/menu') {
+      userState.set(chatId, {});
+      await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
+      return;
+    }
+
+    if (state.mode === 'support' && state.tonePrompt) {
+      const reply = await handleSupport(state.tonePrompt, text);
+      await sendMessage(chatId, reply, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+      return;
+    }
+
+    if (state.mode === 'orders') {
+      const reply = handleOrderStatus(text);
+      userState.set(chatId, {});
+      await sendMessage(chatId, reply, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+      return;
+    }
+
+    if (state.mode === 'cheese') {
+      const result = await handleCheese(text);
+      if (typeof result === 'string') {
+        await sendMessage(chatId, result, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+      } else {
+        await sendMessage(chatId, result.loading);
+        await sendMessage(chatId, result.answer, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+      }
+      return;
+    }
+
+    await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
+  }
+
+  if (type === 'message_callback') {
+    const cb = update.callback;
+    const chatId = cb?.chat_id;
+    const payload = cb?.callback_id;
+    if (!chatId || !payload) return;
 
     if (payload === 'support') {
       userState.set(chatId, { mode: 'support_tone' });
-      await sendMessage(chatId, 'Выбери тон общения:', {
-        type: 'inline',
-        buttons: getToneButtons().map(b => [b]),
-      });
+      await sendMessage(chatId, 'Выбери тон общения:', makeKeyboard(getToneButtons().map(b => [b])));
       return;
     }
 
@@ -90,59 +130,9 @@ async function handleUpdate(update) {
 
     if (payload === 'menu') {
       userState.set(chatId, {});
-      await sendMessage(chatId, WELCOME_TEXT, getMenuKeyboard());
+      await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
       return;
     }
-  }
-
-  // Text message
-  if (msg) {
-    const text = msg.text || '';
-
-    if (text === '/start' || text === '/меню' || text === '/menu') {
-      userState.set(chatId, {});
-      await sendMessage(chatId, WELCOME_TEXT, getMenuKeyboard());
-      return;
-    }
-
-    if (state.mode === 'support' && state.tonePrompt) {
-      const reply = await handleSupport(state.tonePrompt, text);
-      await sendMessage(chatId, reply, {
-        type: 'inline',
-        buttons: [[{ text: '↩ Главное меню', payload: 'menu' }]],
-      });
-      return;
-    }
-
-    if (state.mode === 'orders') {
-      const reply = handleOrderStatus(text);
-      userState.set(chatId, {});
-      await sendMessage(chatId, reply, {
-        type: 'inline',
-        buttons: [[{ text: '↩ Главное меню', payload: 'menu' }]],
-      });
-      return;
-    }
-
-    if (state.mode === 'cheese') {
-      const result = await handleCheese(text);
-      if (typeof result === 'string') {
-        await sendMessage(chatId, result, {
-          type: 'inline',
-          buttons: [[{ text: '↩ Главное меню', payload: 'menu' }]],
-        });
-      } else {
-        await sendMessage(chatId, result.loading);
-        await sendMessage(chatId, result.answer, {
-          type: 'inline',
-          buttons: [[{ text: '↩ Главное меню', payload: 'menu' }]],
-        });
-      }
-      return;
-    }
-
-    // Unknown input — show menu
-    await sendMessage(chatId, WELCOME_TEXT, getMenuKeyboard());
   }
 }
 

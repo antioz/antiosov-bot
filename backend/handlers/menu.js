@@ -1,16 +1,13 @@
 const MENU_BUTTONS = [
-  [{ text: '🤖 Поддержка', payload: 'support' }],
-  [{ text: '📦 Статус заказа', payload: 'orders' }],
-  [{ text: '🧀 Наш колбасный сыр', payload: 'cheese' }],
-  [{ text: '🎲 Случайный смайл', payload: 'emoji' }],
-  [{ text: '👤 О создателе', payload: 'about' }],
+  [{ type: 'callback', text: '🤖 Поддержка', payload: 'support' }],
+  [{ type: 'callback', text: '📦 Статус заказа', payload: 'orders' }],
+  [{ type: 'callback', text: '🧀 Наш колбасный сыр', payload: 'cheese' }],
+  [{ type: 'callback', text: '🎲 Случайный смайл', payload: 'emoji' }],
+  [{ type: 'callback', text: '👤 О создателе', payload: 'about' }],
 ];
 
 function getMenuKeyboard() {
-  return {
-    type: 'inline',
-    buttons: MENU_BUTTONS,
-  };
+  return MENU_BUTTONS;
 }
 
 const WELCOME_TEXT = `БОТ АНТИОСОВА 🤖
