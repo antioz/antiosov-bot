@@ -17,11 +17,12 @@ const MAX_API = 'https://platform-api.max.ru';
 
 const userState = new Map();
 
-async function sendMessage(chatId, text, keyboard = null) {
-  const body = { chat_id: chatId, text };
+async function sendMessage(recipientId, text, keyboard = null, useChat = false) {
+  const body = { text };
   if (keyboard) body.attachments = [keyboard];
+  const param = useChat ? `chat_id=${recipientId}` : `user_id=${recipientId}`;
   try {
-    await axios.post(`${MAX_API}/messages`, body, {
+    await axios.post(`${MAX_API}/messages?${param}`, body, {
       headers: { Authorization: BOT_TOKEN },
     });
   } catch (err) {
@@ -40,58 +41,64 @@ async function handleUpdate(update) {
   const type = update.update_type;
 
   if (type === 'bot_started') {
-    const chatId = update.chat_id;
-    userState.set(chatId, {});
-    await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
+    const userId = update.user?.user_id;
+    if (!userId) return;
+    userState.set(userId, {});
+    await sendMessage(userId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
     return;
   }
 
   if (type === 'message_created') {
     const msg = update.message;
-    const chatId = msg?.recipient?.chat_id || msg?.recipient?.user_id;
+    const chatId = msg?.recipient?.chat_id;
+    const userId = msg?.sender?.user_id;
+    const recipientId = chatId || userId;
+    const useChat = !!chatId;
     const text = msg?.body?.text || '';
-    if (!chatId) return;
+    if (!recipientId) return;
 
-    const state = userState.get(chatId) || {};
+    const stateKey = userId || recipientId;
+    const state = userState.get(stateKey) || {};
 
     if (text === '/start' || text === '/меню' || text === '/menu') {
-      userState.set(chatId, {});
-      await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
+      userState.set(stateKey, {});
+      await sendMessage(recipientId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()), useChat);
       return;
     }
 
     if (state.mode === 'support' && state.tonePrompt) {
       const reply = await handleSupport(state.tonePrompt, text);
-      await sendMessage(chatId, reply, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+      await sendMessage(recipientId, reply, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]), useChat);
       return;
     }
 
     if (state.mode === 'orders') {
       const reply = handleOrderStatus(text);
-      userState.set(chatId, {});
-      await sendMessage(chatId, reply, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+      userState.set(stateKey, {});
+      await sendMessage(recipientId, reply, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]), useChat);
       return;
     }
 
     if (state.mode === 'cheese') {
       const result = await handleCheese(text);
       if (typeof result === 'string') {
-        await sendMessage(chatId, result, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+        await sendMessage(recipientId, result, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]), useChat);
       } else {
-        await sendMessage(chatId, result.loading);
-        await sendMessage(chatId, result.answer, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]));
+        await sendMessage(recipientId, result.loading, null, useChat);
+        await sendMessage(recipientId, result.answer, makeKeyboard([[{ type: 'callback', text: '↩ Главное меню', payload: 'menu' }]]), useChat);
       }
       return;
     }
 
-    await sendMessage(chatId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()));
+    await sendMessage(recipientId, WELCOME_TEXT, makeKeyboard(getMenuKeyboard()), useChat);
   }
 
   if (type === 'message_callback') {
     const cb = update.callback;
-    const chatId = cb?.chat_id;
-    const payload = cb?.callback_id;
-    if (!chatId || !payload) return;
+    const userId = cb?.user?.user_id;
+    const payload = cb?.payload;
+    if (!userId || !payload) return;
+    const chatId = userId;
 
     if (payload === 'support') {
       userState.set(chatId, { mode: 'support_tone' });

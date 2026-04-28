@@ -49,9 +49,11 @@ npm start
 ## Деплой
 
 **Backend:** Railway или Render (Node.js). После деплоя зарегистрируй webhook:
-```
-POST https://botapi.max.ru/setWebhook
-{ "url": "https://your-server.railway.app/webhook" }
+```bash
+curl -X POST "https://platform-api.max.ru/subscriptions" \
+  -H "Authorization: YOUR_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://your-server.railway.app/webhook", "update_types": ["message_created", "bot_started", "message_callback"]}'
 ```
 
 **Mini App:** GitHub Pages → Settings → Pages → Source: `/miniapp`
