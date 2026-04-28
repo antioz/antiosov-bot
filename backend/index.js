@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json());
 
 const BOT_TOKEN = process.env.MAX_BOT_TOKEN;
-const MINIAPP_URL = process.env.MINIAPP_URL || 'https://antioz.github.io/antiosov-bot/';
+const MINIAPP_URL = process.env.MINIAPP_URL || 'https://antioz.github.io/antiosov-bot';
 const MAX_API = 'https://platform-api.max.ru';
 
 const userState = new Map();
@@ -131,13 +131,13 @@ async function handleUpdate(update) {
     }
 
     if (payload === 'about') {
-      const linkKeyboard = {
+      const openAppKeyboard = {
         type: 'inline_keyboard',
         payload: {
-          buttons: [[{ type: 'link', text: '🔗 Открыть портфолио', url: MINIAPP_URL }]],
+          buttons: [[{ type: 'open_app', text: '🔗 Открыть портфолио', web_app: MINIAPP_URL }]],
         },
       };
-      await sendMessage(chatId, '👤 О создателе — Дмитрий Антиосов', linkKeyboard);
+      await sendMessage(chatId, '👤 О создателе — Дмитрий Антиосов', openAppKeyboard);
       return;
     }
 
