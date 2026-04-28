@@ -131,13 +131,13 @@ async function handleUpdate(update) {
     }
 
     if (payload === 'about') {
-      const openAppKeyboard = {
+      const linkKeyboard = {
         type: 'inline_keyboard',
         payload: {
-          buttons: [[{ type: 'open_app', text: '🔗 Открыть портфолио', web_app: MINIAPP_URL }]],
+          buttons: [[{ type: 'link', text: '🔗 Открыть портфолио', url: 'https://max.ru/id771402577192_bot?startapp' }]],
         },
       };
-      await sendMessage(chatId, '👤 О создателе — Дмитрий Антиосов', openAppKeyboard);
+      await sendMessage(chatId, '👤 О создателе — Дмитрий Антиосов', linkKeyboard);
       return;
     }
 
