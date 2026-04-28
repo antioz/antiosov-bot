@@ -12,7 +12,7 @@ function getMenuKeyboard() {
 
 const WELCOME_TEXT = `БОТ АНТИОСОВА 🤖
 
-Привет! Я демонстрирую возможности мессенджер-ботов.
+Я здесь чтобы помочь вам. Вам всем нужна помощь.
 Выбери раздел:`;
 
 module.exports = { getMenuKeyboard, WELCOME_TEXT };
