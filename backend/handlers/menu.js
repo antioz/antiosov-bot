@@ -3,7 +3,7 @@ const MENU_BUTTONS = [
   [{ type: 'callback', text: '📦 Статус заказа', payload: 'orders' }],
   [{ type: 'callback', text: '🧀 Наш колбасный сыр', payload: 'cheese' }],
   [{ type: 'callback', text: '🎲 Случайный смайл', payload: 'emoji' }],
-  [{ type: 'open_app', text: '👤 О создателе', web_app: 'https://antioz.github.io/antiosov-bot/' }],
+  [{ type: 'callback', text: '👤 О создателе', payload: 'about' }],
 ];
 
 function getMenuKeyboard() {
