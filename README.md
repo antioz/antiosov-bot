@@ -32,8 +32,7 @@ npm start
 | Переменная | Описание |
 |---|---|
 | `MAX_BOT_TOKEN` | Токен бота Max (создаётся в настройках Max) |
-| `GIGACHAT_CLIENT_ID` | Client ID из кабинета Sber Developer |
-| `GIGACHAT_CLIENT_SECRET` | Client Secret оттуда же |
+| `GROQ_API_KEY` | API ключ с console.groq.com (бесплатно, без карты) |
 | `PORT` | Порт сервера (по умолчанию 3000) |
 | `MINIAPP_URL` | URL задеплоенного Mini App |
 
