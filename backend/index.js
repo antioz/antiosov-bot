@@ -13,7 +13,7 @@ app.use(express.json());
 
 const BOT_TOKEN = process.env.MAX_BOT_TOKEN;
 const MINIAPP_URL = process.env.MINIAPP_URL || 'https://antioz.github.io/antiosov-bot/';
-const MAX_API = `https://botapi.max.ru`;
+const MAX_API = `https://platform-api.max.ru`;
 
 // Per-user state: { mode, tonePrompt, awaitingOrder }
 const userState = new Map();
@@ -23,7 +23,7 @@ async function sendMessage(chatId, text, keyboard = null) {
   if (keyboard) body.reply_markup = keyboard;
   try {
     await axios.post(`${MAX_API}/sendMessage`, body, {
-      headers: { Authorization: `Bearer ${BOT_TOKEN}` },
+      headers: { Authorization: BOT_TOKEN },
     });
   } catch (err) {
     console.error('sendMessage error:', err.response?.data || err.message);
@@ -32,7 +32,7 @@ async function sendMessage(chatId, text, keyboard = null) {
 
 async function answerCallback(callbackId) {
   await axios.post(`${MAX_API}/answerCallbackQuery`, { callback_query_id: callbackId }, {
-    headers: { Authorization: `Bearer ${BOT_TOKEN}` },
+    headers: { Authorization: BOT_TOKEN },
   }).catch(() => {});
 }
 
